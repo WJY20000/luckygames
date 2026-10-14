@@ -22,7 +22,7 @@ public class WorldGame {
     private final File worldDimensionFolder;
     private final GameStructures gameStructures;
     private final LuckyBlock luckyBlock;
-    WorldGame(JavaPlugin plugin,BlockProtector protector,LuckyBlock luckyBlock,GameStructures gameStructures,int[] luckyBlockDistribution){
+    WorldGame(JavaPlugin plugin,BlockProtector protector,LuckyBlock luckyBlock,GameStructures gameStructures){
         this.plugin = plugin;
         this.protector = protector;
         this.luckyBlock = luckyBlock;

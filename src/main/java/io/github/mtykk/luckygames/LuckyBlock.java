@@ -40,9 +40,9 @@ public class LuckyBlock implements Listener {
     private static final String TEXTURE_UNLUCKY = TEXTURE_NORMAL;
     private static final String TEXTURE_LUCKY = TEXTURE_NORMAL;
     private static ResolvableProfile TEXTURE_PROFILE_NORMAL, TEXTURE_PROFILE_UNLUCKY, TEXTURE_PROFILE_LUCKY;
-    private static final NamespacedKey LUCKY_BLOCK_TYPE_KEY = new NamespacedKey(LuckyGames.getInstance(),"lucky_block_type");
-    private static final NamespacedKey LUCKY_BLOCK_ATTRIBUTION_KEY = new NamespacedKey(LuckyGames.getInstance(),"lucky_block_attribution"); // Integer, representing which team(lane) the block belongs to, -1 means public.
-    private static final NamespacedKey LUCKY_BLOCK_DISPLAY_KEY = new NamespacedKey(LuckyGames.getInstance(), "lucky_block_display");
+    private static final NamespacedKey LUCKY_BLOCK_TYPE_KEY = new NamespacedKey("luckygames","lucky_block_type");
+    private static final NamespacedKey LUCKY_BLOCK_ATTRIBUTION_KEY = new NamespacedKey("luckygames","lucky_block_attribution"); // Integer, representing which team(lane) the block belongs to, -1 means public.
+    private static final NamespacedKey LUCKY_BLOCK_DISPLAY_KEY = new NamespacedKey("luckygames", "lucky_block_display");
 
     public static final String[] luckyEventTypesString = {"unlucky","normal","lucky","challenge"};
     public static final String[] luckyBlockTypesString = {"unlucky-block", "normal-block", "lucky-block", "challenge-block"};

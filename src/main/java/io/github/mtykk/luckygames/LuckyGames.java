@@ -80,7 +80,7 @@ public class LuckyGames extends JavaPlugin implements Listener{
         gameSettings.readFromConfig(this);
         gameState = new GameState(this,this::onEpilogue,this::onFinish);
         gameStructures = new GameStructures(blockProtector);
-        worldGame = new WorldGame(this,blockProtector,luckyBlock,gameStructures,gameSettings.getLuckyBlockDistribution());
+        worldGame = new WorldGame(this,blockProtector,luckyBlock,gameStructures);
         pluginScoreboards = new PluginScoreboards(this,gameState,luckyBlock.getLuckyEvents().getPlayerOngoingChallenges());
         registerCommands();
         showHealthInTab();
