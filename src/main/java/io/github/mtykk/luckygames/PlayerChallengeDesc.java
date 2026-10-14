@@ -2,7 +2,6 @@ package io.github.mtykk.luckygames;
 
 import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.bossbar.BossBar;
-import net.kyori.adventure.bossbar.BossBarViewer;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -15,7 +14,6 @@ import org.bukkit.event.Listener;
 
 
 import javax.annotation.Nullable;
-import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -39,6 +37,8 @@ public class PlayerChallengeDesc {
     private final Consumer<UUID> onFail;
     @Nullable
     private BossBar bossBar = null;
+    @Nullable
+    private Player bossBarPlayer = null;
 
     PlayerChallengeDesc(UUID _playerUUID, Component _modal, Component _gold, int _ticksLeft,
                         @Nullable Consumer<UUID> _periodicChecker, @Nullable Listener _listenerChecker,
@@ -93,21 +93,20 @@ public class PlayerChallengeDesc {
         if (player == null) throw new IllegalStateException("The player does not exist");
         deleteBossBar();
         bossBar = BossBar.bossBar(generateRemainingTime(), 1.0f, BossBar.Color.YELLOW, BossBar.Overlay.PROGRESS);
+        bossBarPlayer = player;
         player.showBossBar(bossBar);
     }
 
     public void updateBossBar() {
         if (bossBar == null) return;
 
-        // Some server versions remove disconnected viewers automatically, while others keep them.
-        // Remove stale viewers and re-show the same bar after this player reconnects in either case.
-        for (BossBarViewer viewer : List.copyOf(bossBar.viewers())) {
-            if (viewer instanceof Player viewerPlayer && !viewerPlayer.isConnected()) {
-                bossBar.removeViewer(viewer);
-            }
-        }
         Player player = Bukkit.getPlayer(playerUUID);
-        if (player != null && player.isConnected() && !bossBar.viewers().contains(player)) {
+        if (bossBarPlayer != null && (player == null || !player.isConnected() || bossBarPlayer != player)) {
+            bossBar.removeViewer(bossBarPlayer);
+            bossBarPlayer = null;
+        }
+        if (player != null && player.isConnected() && bossBarPlayer == null) {
+            bossBarPlayer = player;
             player.showBossBar(bossBar);
         }
 
@@ -119,9 +118,9 @@ public class PlayerChallengeDesc {
         if (bossBar == null) return;
         BossBar bar = bossBar;
         bossBar = null;
-        for (BossBarViewer viewer : List.copyOf(bar.viewers())) {
-            bar.removeViewer(viewer);
-        }
+        Player viewer = bossBarPlayer;
+        bossBarPlayer = null;
+        if (viewer != null) bar.removeViewer(viewer);
     }
 
     /**

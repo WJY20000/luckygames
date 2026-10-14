@@ -17,7 +17,6 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,12 +34,12 @@ public class GameState implements Listener{
     private int teamNumbers;
     private int finishedLaneCount;
     private final List<PlayerGameState> playerGameStates = new ArrayList<>();
-    private final JavaPlugin plugin;
+    private final LuckyGames plugin;
     private final HashMap<UUID,Integer> playerTeamAttribution = new HashMap<>();
     private final Runnable runEpilogue;
     private final Runnable runFinish;
 
-    GameState(JavaPlugin plugin,Runnable onEpilogue,Runnable onFinish){
+    GameState(LuckyGames plugin, Runnable onEpilogue, Runnable onFinish) {
         runEpilogue = onEpilogue;
         runFinish = onFinish;
         this.plugin = plugin;
