@@ -212,7 +212,8 @@ public class BetterNotChallengeLuckyEvents extends GenericLuckyEvents{
                         public void onPlayerDeath(PlayerDeathEvent e) {
                             Entity causingEntity = e.getDamageSource().getCausingEntity();
                             if (causingEntity != null && causingEntity.getType() == EntityType.PLAYER
-                                    && causingEntity.getUniqueId().equals(targetPlayerUUID)) {
+                                    && causingEntity.getUniqueId().equals(targetPlayerUUID)
+                                    && !e.getPlayer().getUniqueId().equals(targetPlayerUUID)) {
                                 onFail.accept(targetPlayerUUID);
                             }
                         }
