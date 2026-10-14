@@ -4,6 +4,7 @@ import com.destroystokyo.paper.event.player.PlayerJumpEvent;
 import io.papermc.paper.event.inventory.ItemCraftedEvent;
 import net.kyori.adventure.text.Component;
 import org.bukkit.*;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LightningStrike;
 import org.bukkit.entity.Player;
@@ -11,6 +12,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerFishEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -30,26 +32,43 @@ public class BetterNotChallengeLuckyEvents extends GenericLuckyEvents{
     private PlayerOngoingChallenges playerOngoingChallengesInstance;
 
     protected final Consumer<UUID> onFail = uuid -> {
-        Player player = Bukkit.getPlayer(uuid);
-        if(player != null && player.isConnected()){
-            World world = player.getWorld();
-            ReusableParticleBuilders.DAMAGE_PARTICLE_BUILDER.location(player.getLocation()).spawn();
-            world.spawn(player.getLocation(), LightningStrike.class, CreatureSpawnEvent.SpawnReason.CUSTOM, lightningStrike -> {
-                lightningStrike.setFlashCount(32);
-            });
+        if (!playerOngoingChallengesInstance.hasOngoingChallenge(uuid)) return;
+        try {
+            Player player = Bukkit.getPlayer(uuid);
+            if (player != null && player.isConnected()) {
+                World world = player.getWorld();
+                ReusableParticleBuilders.DAMAGE_PARTICLE_BUILDER.location(player.getLocation()).spawn();
+                world.spawn(player.getLocation(), LightningStrike.class, CreatureSpawnEvent.SpawnReason.CUSTOM, lightningStrike -> {
+                    lightningStrike.setFlashCount(32);
+                });
+            }
+        } finally {
+            finishChallenge(uuid, ReusableChallengeOutcomeTypes.FAIL);
         }
-        playerOngoingChallengesInstance.getOngoingChallenges().get(uuid).broadcastChallengeEnd(ReusableChallengeOutcomeTypes.FAIL);
-        playerOngoingChallengesInstance.removeOngoingChallenge(uuid);
     };
 
     protected final Consumer<UUID> onTimeout = uuid -> {
-        Player player = Bukkit.getPlayer(uuid);
-        if(player != null && player.isConnected()){
-            LuckyGames.getInstance().getLuckyBlockInstance().getLuckyEvents().getLuckyEventsRegistry(2).get(0).run(player,player.getLocation().toBlockLocation());
+        if (!playerOngoingChallengesInstance.hasOngoingChallenge(uuid)) return;
+        try {
+            Player player = Bukkit.getPlayer(uuid);
+            if (player != null && player.isConnected()) {
+                LuckyGames.getInstance().getLuckyBlockInstance().getLuckyEvents().getLuckyEventsRegistry(2).get(0)
+                        .run(player, player.getLocation().toBlockLocation());
+            }
+        } finally {
+            finishChallenge(uuid, ReusableChallengeOutcomeTypes.DONE);
         }
-        playerOngoingChallengesInstance.getOngoingChallenges().get(uuid).broadcastChallengeEnd(ReusableChallengeOutcomeTypes.DONE);
-        playerOngoingChallengesInstance.removeOngoingChallenge(uuid);
     };
+
+    private void finishChallenge(UUID uuid, Component outcome) {
+        PlayerChallengeDesc challenge = playerOngoingChallengesInstance.getOngoingChallenges().get(uuid);
+        if (challenge == null) return;
+        try {
+            challenge.broadcastChallengeEnd(outcome);
+        } finally {
+            playerOngoingChallengesInstance.removeOngoingChallenge(uuid);
+        }
+    }
 
     BetterNotChallengeLuckyEvents(PlayerOngoingChallenges playerOngoingChallenges){
         playerOngoingChallengesInstance = playerOngoingChallenges;
@@ -64,11 +83,10 @@ public class BetterNotChallengeLuckyEvents extends GenericLuckyEvents{
                         @Override
                         public void accept(UUID uuid) {
                             Player playerChecking = Bukkit.getPlayer(uuid);
-                            try {
-                                if (playerChecking.isSneaking()) counter++;
-                                else counter = 0;
-                            } catch (RuntimeException e) {}
-                            if(counter > 60) onFail.accept(uuid);
+                            if (playerChecking == null || !playerChecking.isConnected()) return;
+                            if (playerChecking.isSneaking()) counter++;
+                            else counter = 0;
+                            if (counter >= 60) onFail.accept(uuid);
                         }
                     },
                     null,
@@ -93,7 +111,7 @@ public class BetterNotChallengeLuckyEvents extends GenericLuckyEvents{
                         int playerJumpCount = 0;
                         @EventHandler
                         public void onPlayerJump(PlayerJumpEvent e){
-                            if(e.getPlayer().getUniqueId() == targetPlayerUUID) {
+                            if(e.getPlayer().getUniqueId().equals(targetPlayerUUID)) {
                                 playerJumpCount++;
                                 if(playerJumpCount >= 2) onFail.accept(targetPlayerUUID);
                             }
@@ -119,11 +137,10 @@ public class BetterNotChallengeLuckyEvents extends GenericLuckyEvents{
                         @Override
                         public void accept(UUID uuid) {
                             Player playerChecking = Bukkit.getPlayer(uuid);
-                            try{
-                                if(playerChecking.getPitch() < -50f) counter++;
-                                else counter = 0;
-                            }catch(RuntimeException e){}
-                            if(counter>100) onFail.accept(uuid);
+                            if (playerChecking == null || !playerChecking.isConnected()) return;
+                            if (playerChecking.getPitch() < -50f) counter++;
+                            else counter = 0;
+                            if (counter >= 100) onFail.accept(uuid);
                         }
                     },
                     null,
@@ -147,7 +164,7 @@ public class BetterNotChallengeLuckyEvents extends GenericLuckyEvents{
                         UUID targetPlayerUUID = playerUUID;
                         @EventHandler
                         public void onPlayerRespawn(PlayerRespawnEvent e){
-                            if(e.getPlayer().getUniqueId() == targetPlayerUUID) onFail.accept(targetPlayerUUID);
+                            if(e.getPlayer().getUniqueId().equals(targetPlayerUUID)) onFail.accept(targetPlayerUUID);
                         }
                     },
                     onTimeout,
@@ -170,7 +187,7 @@ public class BetterNotChallengeLuckyEvents extends GenericLuckyEvents{
                         UUID targetPlayerUUID = playerUUID;
                         @EventHandler
                         public void onPlayerDeath(PlayerDeathEvent e){
-                            if(e.getPlayer().getUniqueId() == targetPlayerUUID) onFail.accept(targetPlayerUUID);
+                            if(e.getPlayer().getUniqueId().equals(targetPlayerUUID)) onFail.accept(targetPlayerUUID);
                         }
                     },
                     onTimeout,
@@ -192,11 +209,12 @@ public class BetterNotChallengeLuckyEvents extends GenericLuckyEvents{
                     new Listener() {
                         UUID targetPlayerUUID = playerUUID;
                         @EventHandler
-                        public void onPlayerDeath(PlayerDeathEvent e){
-                            try {
-                                if (e.getDamageSource().getCausingEntity().getType() == EntityType.PLAYER && e.getDamageSource().getCausingEntity().getUniqueId() == targetPlayerUUID)
-                                    onFail.accept(targetPlayerUUID);
-                            }catch(RuntimeException exception){}
+                        public void onPlayerDeath(PlayerDeathEvent e) {
+                            Entity causingEntity = e.getDamageSource().getCausingEntity();
+                            if (causingEntity != null && causingEntity.getType() == EntityType.PLAYER
+                                    && causingEntity.getUniqueId().equals(targetPlayerUUID)) {
+                                onFail.accept(targetPlayerUUID);
+                            }
                         }
                     },
                     onTimeout,
@@ -218,9 +236,9 @@ public class BetterNotChallengeLuckyEvents extends GenericLuckyEvents{
                         @Override
                         public void accept(UUID uuid) {
                             Player playerChecking = Bukkit.getPlayer(uuid);
-                            try{
-                                if(playerChecking.getY() > 100) onFail.accept(uuid);
-                            }catch(RuntimeException e){}
+                            if (playerChecking != null && playerChecking.isConnected() && playerChecking.getY() > 100) {
+                                onFail.accept(uuid);
+                            }
                         }
                     },
                     null,
@@ -243,9 +261,9 @@ public class BetterNotChallengeLuckyEvents extends GenericLuckyEvents{
                         @Override
                         public void accept(UUID uuid) {
                             Player playerChecking = Bukkit.getPlayer(uuid);
-                            try{
-                                if(playerChecking.getY() < 40) onFail.accept(uuid);
-                            }catch(RuntimeException e){}
+                            if (playerChecking != null && playerChecking.isConnected() && playerChecking.getY() < 40) {
+                                onFail.accept(uuid);
+                            }
                         }
                     },
                     null,
@@ -268,11 +286,15 @@ public class BetterNotChallengeLuckyEvents extends GenericLuckyEvents{
                     new Listener() {
                         UUID targetPlayerUUID = playerUUID;
                         @EventHandler
-                        public void onPlayerInteract(PlayerInteractEvent e){
-                            try {
-                                if (e.getPlayer().getUniqueId() == targetPlayerUUID && e.getClickedBlock().getType() == Material.FURNACE)
-                                    onFail.accept(playerUUID);
-                            }catch (RuntimeException exception){}
+                        public void onPlayerInteract(PlayerInteractEvent e) {
+                            Material clickedType = e.getClickedBlock() == null ? null : e.getClickedBlock().getType();
+                            if (e.getPlayer().getUniqueId().equals(targetPlayerUUID)
+                                    && e.getAction() == Action.RIGHT_CLICK_BLOCK
+                                    && (clickedType == Material.FURNACE
+                                    || clickedType == Material.BLAST_FURNACE
+                                    || clickedType == Material.SMOKER)) {
+                                onFail.accept(playerUUID);
+                            }
                         }
                     },
                     onTimeout,
@@ -296,15 +318,17 @@ public class BetterNotChallengeLuckyEvents extends GenericLuckyEvents{
                         @Override
                         public void accept(UUID uuid) {
                             Player playerChecking = Bukkit.getPlayer(uuid);
-                            try{
-                                if(playerLocation == null || playerChecking.getLocation().distance(playerLocation) > 0.2){
-                                    playerLocation = playerChecking.getLocation();
-                                    counter = 0;
-                                }else{
-                                    counter++;
-                                }
-                            }catch(RuntimeException e){}
-                            if(counter > 100) onFail.accept(uuid);
+                            if (playerChecking == null || !playerChecking.isConnected()) return;
+                            Location currentLocation = playerChecking.getLocation();
+                            if (playerLocation == null
+                                    || !currentLocation.getWorld().equals(playerLocation.getWorld())
+                                    || currentLocation.distanceSquared(playerLocation) > 0.04) {
+                                playerLocation = currentLocation;
+                                counter = 0;
+                            } else {
+                                counter++;
+                            }
+                            if (counter > 100) onFail.accept(uuid);
                         }
                     },
                     null,
@@ -328,7 +352,7 @@ public class BetterNotChallengeLuckyEvents extends GenericLuckyEvents{
                         UUID targetPlayerUUID = playerUUID;
                         @EventHandler
                         public void onItemCraft(ItemCraftedEvent e){
-                            if(e.getPlayer().getUniqueId() == targetPlayerUUID) onFail.accept(playerUUID);
+                            if(e.getPlayer().getUniqueId().equals(targetPlayerUUID)) onFail.accept(playerUUID);
                         }
                     },
                     onTimeout,
@@ -351,7 +375,7 @@ public class BetterNotChallengeLuckyEvents extends GenericLuckyEvents{
                         UUID targetPlayerUUID = playerUUID;
                         @EventHandler
                         public void onPlayerDropItem(PlayerDropItemEvent e){
-                            if(e.getPlayer().getUniqueId() == targetPlayerUUID) onFail.accept(playerUUID);
+                            if(e.getPlayer().getUniqueId().equals(targetPlayerUUID)) onFail.accept(playerUUID);
                         }
                     },
                     onTimeout,
@@ -374,7 +398,7 @@ public class BetterNotChallengeLuckyEvents extends GenericLuckyEvents{
                         UUID targetPlayerUUID = playerUUID;
                         @EventHandler
                         public void onPlayerFish(PlayerFishEvent e){
-                            if(e.getPlayer().getUniqueId() == targetPlayerUUID) onFail.accept(playerUUID);
+                            if(e.getPlayer().getUniqueId().equals(targetPlayerUUID)) onFail.accept(playerUUID);
                         }
                     },
                     onTimeout,
