@@ -12,10 +12,10 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
-import org.bukkit.event.block.Action;
+import org.bukkit.event.inventory.InventoryOpenEvent;
+import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerFishEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 
 import java.util.UUID;
@@ -286,14 +286,13 @@ public class BetterNotChallengeLuckyEvents extends GenericLuckyEvents{
                     null,
                     new Listener() {
                         UUID targetPlayerUUID = playerUUID;
-                        @EventHandler
-                        public void onPlayerInteract(PlayerInteractEvent e) {
-                            Material clickedType = e.getClickedBlock() == null ? null : e.getClickedBlock().getType();
+                        @EventHandler(ignoreCancelled = true)
+                        public void onInventoryOpen(InventoryOpenEvent e) {
+                            InventoryType inventoryType = e.getInventory().getType();
                             if (e.getPlayer().getUniqueId().equals(targetPlayerUUID)
-                                    && e.getAction() == Action.RIGHT_CLICK_BLOCK
-                                    && (clickedType == Material.FURNACE
-                                    || clickedType == Material.BLAST_FURNACE
-                                    || clickedType == Material.SMOKER)) {
+                                    && (inventoryType == InventoryType.FURNACE
+                                    || inventoryType == InventoryType.BLAST_FURNACE
+                                    || inventoryType == InventoryType.SMOKER)) {
                                 onFail.accept(playerUUID);
                             }
                         }
@@ -351,7 +350,7 @@ public class BetterNotChallengeLuckyEvents extends GenericLuckyEvents{
                     null,
                     new Listener() {
                         UUID targetPlayerUUID = playerUUID;
-                        @EventHandler
+                        @EventHandler(ignoreCancelled = true)
                         public void onItemCraft(ItemCraftedEvent e){
                             if(e.getPlayer().getUniqueId().equals(targetPlayerUUID)) onFail.accept(playerUUID);
                         }
@@ -374,7 +373,7 @@ public class BetterNotChallengeLuckyEvents extends GenericLuckyEvents{
                     null,
                     new Listener() {
                         UUID targetPlayerUUID = playerUUID;
-                        @EventHandler
+                        @EventHandler(ignoreCancelled = true)
                         public void onPlayerDropItem(PlayerDropItemEvent e){
                             if(e.getPlayer().getUniqueId().equals(targetPlayerUUID)) onFail.accept(playerUUID);
                         }
@@ -397,7 +396,7 @@ public class BetterNotChallengeLuckyEvents extends GenericLuckyEvents{
                     null,
                     new Listener() {
                         UUID targetPlayerUUID = playerUUID;
-                        @EventHandler
+                        @EventHandler(ignoreCancelled = true)
                         public void onPlayerFish(PlayerFishEvent e){
                             if(e.getPlayer().getUniqueId().equals(targetPlayerUUID)) onFail.accept(playerUUID);
                         }

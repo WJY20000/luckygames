@@ -22,12 +22,10 @@ public class WorldGame {
     private final File worldDimensionFolder;
     private final GameStructures gameStructures;
     private final LuckyBlock luckyBlock;
-    private final int[] luckyBlockDistribution;
     WorldGame(JavaPlugin plugin,BlockProtector protector,LuckyBlock luckyBlock,GameStructures gameStructures,int[] luckyBlockDistribution){
         this.plugin = plugin;
         this.protector = protector;
         this.luckyBlock = luckyBlock;
-        this.luckyBlockDistribution = luckyBlockDistribution;
         this.gameStructures = gameStructures;
         worldKey = new NamespacedKey(plugin,"game");
         worldDimensionFolder = new File(Bukkit.getServer().getLevelDirectory().toFile(),"dimensions/"+worldKey.getNamespace()+"/"+worldKey.getKey());
@@ -175,7 +173,7 @@ public class WorldGame {
                             Location location = new Location(gameWorld, currentX, currentY, currentZ);
                             gameStructures.getIsland().place(location, true, block -> {
                                 LuckyBlockTypes type = WeightedRandomPicker.randomPick(
-                                        Arrays.asList(LuckyBlockTypes.values()), luckyBlockDistribution);
+                                        Arrays.asList(LuckyBlockTypes.values()), gameSettings.getLuckyBlockDistribution());
                                 luckyBlock.placeLuckyBlock(block.getLocation(), type, currentLane);
                                 protector.protect(block);
                                 PersistentDataContainer pdc = new CustomBlockData(block, plugin);
